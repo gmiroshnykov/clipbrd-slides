@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+
+        <title>Clipbrd - a clipboard synchronizer</title>
+
+        <meta name="author" content="George Miroshnykov">
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+        <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+
+        <link rel="stylesheet" href="css/reveal.css">
+        <link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+        <!-- For syntax highlighting -->
+        <link rel="stylesheet" href="lib/css/zenburn.css">
+
+        <link rel="stylesheet" href="lib/css/clipbrd.css">
+
+        <!-- If the query includes 'print-pdf', use the PDF print sheet -->
+        <script>
+            document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+        </script>
+
+        <!--[if lt IE 9]>
+        <script src="lib/js/html5shiv.js"></script>
+        <![endif]-->
+    </head>
+
+    <body>
+
+        <div class="reveal">
+
+            <!-- Any section element inside of this container is displayed as a slide -->
+            <div class="slides">
+
+                <section>
+                    <h1>Clipbrd</h1>
+                    <h3>a clipboard synchronizer</h3>
+                    <img src="img/logo.png" class="transparent-img" width="40%" />
+                    <h4><a href="http://www.clipbrd.com" target="_blank">www.clipbrd.com</a></h4>
+                </section>
+
+                <section>
+                    <h2>What?</h2>
+                    <ul>
+                        <li>copy on your PC, paste on your phone</li>
+                        <li>copy on your phone, paste on your PC</li>
+                        <li>copy on your PC, paste on your Mac</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Why?</h2>
+                        <ul>
+                            <li>because I needed this ;)</li>
+                            <li>emails / logins / passwords</li>
+                            <li>photos, screenshots (eventually)</li>
+                            <li>tons of use cases I can't think of yet</li>
+                        </ul>
+
+                        <p style="margin-top: 1em">
+                            This is how clipboard should work today!
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2>Paranoid Mode</h2>
+                        <p class="fragment">You shouldn't reuse your passwords!</p>
+                        <p class="fragment">But random passwords are PITA to use :(</p>
+                        <p class="fragment">Solution: use password manager!</p>
+                        <p class="fragment">Problem: password managers suck on mobile :(</p>
+                        <div class="fragment" style="margin-top: 1em">
+                            <h3>Solution: use Clipbrd!</h3>
+                            <p>Copy password on PC, paste on the phone.</p>
+                        </div>
+                    </section>
+                </section>
+
+                <section>
+                    <h2>How?</h2>
+                    <ul>
+                        <li>cloud-based awesomeness</li>
+                        <ul>
+                            <li>Android: Google Cloud Messaging</li>
+                            <li>PC: websockets (socket.io)</li>
+                        </ul>
+                        <li>end-to-end client-side encryption</li>
+                        <ul>
+                            <li>PKDF2: password => key => hash</li>
+                            <li>extremely hard to brute-force</li>
+                            <li>even I won't be able to see your clipboards</li>
+                        </ul>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Let's get technical!</h2>
+                </section>
+
+                <section>
+                    <img src="img/android.svg"
+                        width="50%"
+                        class="transparent-img" />
+                </section>
+
+                <section>
+                    <h2>Java sucks!</h2>
+                    <pre><code class="java">
+RingtonePreference prefRingtone = (RingtonePreference) findPreference(NOTIFICATION_RINGTONE);
+prefRingtone.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        Uri newUri = null;
+        String newString = (String) newValue;
+        if (!newString.equals("")) {
+            newUri = Uri.parse(newString);
+        }
+        updateRingtoneSummary((RingtonePreference) preference, newUri);
+        return true;
+    }
+});
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>Android SDK sucks!</h2>
+                    <img src="img/android-sdk-sucks.png" />
+                </section>
+
+                <section>
+                    <h2>Apache HTTP client sucks!</h2>
+                    <p>Want to make a simple HTTP POST?</a>
+                    <pre><code class="java">
+HttpResponse response;
+
+List<NameValuePair> pairs = new ArrayList<NameValuePair>(1);
+pairs.add(new BasicNameValuePair("registration_id", registrationId));
+UrlEncodedFormEntity urlEncodedFormEntity;
+try {
+    urlEncodedFormEntity = new UrlEncodedFormEntity(pairs);
+} catch (UnsupportedEncodingException e) {
+    throw new ClipbrdClientException("Client error", e);
+}
+
+DefaultHttpClient client = new DefaultHttpClient();
+CredentialsProvider cp = new BasicCredentialsProvider();
+cp.setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
+        new UsernamePasswordCredentials(credentials.getEmail(), credentials.getHash()));
+client.setCredentialsProvider(cp);
+
+HttpPost post = new HttpPost(this.endpoint + "/devices/register");
+post.setEntity(urlEncodedFormEntity);
+try {
+    response = client.execute(post);
+} catch (Exception e) {
+    throw new ClipbrdClientException("Request error", e);
+}
+
+int statusCode = response.getStatusLine().getStatusCode();
+Log.i(TAG, "HTTP " + statusCode);
+
+if (statusCode == 200) {
+    // success
+    return;
+} else if (statusCode == 401) {
+    throw new ClipbrdClientException("Wrong email or password");
+} else {
+    throw new ClipbrdClientException("Unknown error: " + statusCode);
+}
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>Apache HTTP client sucks!</h2>
+                    <p>
+                        Ah, do you also want a
+                        <a href="http://hc.apache.org/httpcomponents-client-ga/tutorial/html/authentication.html#d5e1032" target="_blank">preemptive authentication?</a>
+                    </p>
+                    <pre><code class="java">
+HttpRequestInterceptor preemptiveAuth = new HttpRequestInterceptor() {
+    public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
+        AuthState authState = (AuthState) context.getAttribute(ClientContext.TARGET_AUTH_STATE);
+        CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(
+                ClientContext.CREDS_PROVIDER);
+        HttpHost targetHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+
+        if (authState.getAuthScheme() == null) {
+            AuthScope authScope = new AuthScope(targetHost.getHostName(), targetHost.getPort());
+            Credentials creds = credsProvider.getCredentials(authScope);
+            if (creds != null) {
+                authState.setAuthScheme(new BasicScheme());
+                authState.setCredentials(creds);
+            }
+        }
+    }
+};
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>Mobile development sucks!</h2>
+                    <p>Why can't we just use HTML, CSS and JS for native apps?</p>
+                    <p>Firefox OS, hurry up!</p>
+                </section>
+
+                <section>
+                    <img src="img/chrome.svg"
+                        width="50%"
+                        class="transparent-img" />
+                </section>
+
+                <section>
+                    <h2>Why Chrome?</h2>
+                    <ul>
+                        <li>prototyping is extremely simple</li>
+                        <li>cross-platfom support is free</li>
+                        <li>
+                            <a href="https://developers.google.com/chrome/apps/docs/background"
+                                target="_blank">
+                                background apps
+                            </a>
+                        </li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Chrome: Clipboard API</h2>
+                    <p>Want to get clipboard content?</p>
+                    <pre><code class="javascript">
+textarea.focus();
+document.execCommand("paste");
+var clipboard = textarea.value;
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>Chrome: Clipboard API</h2>
+                    <p>Want to implement onClipboardChange?</p>
+                    <pre><code class="javascript">
+var oldClipboad = getClipboard();
+setInterval(function() {
+    var newClipboard = getClipboard();
+    if (newClipboard != oldClipboard) {
+        oldClipboard = newClipboard;
+        self.emit('change', newClipboard);
+    }
+}, 100);
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>Chrome: Clipboard API</h2>
+                    <p>Want to set clipboard content?</p>
+                    <pre><code class="javascript">
+textarea.value = clipboard;
+textarea.select();
+document.execCommand("copy");
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>Chrome: Clipboard API</h2>
+                    <p>Want to copy/paste images?</p>
+                    <p>Forget about it!</p>
+                </section>
+
+                <section>
+                    <h1>Thanks!</h1>
+                    <h3>George Miroshnykov</h3>
+                    <h4>
+                        <a href="mailto:george@clipbrd.com">
+                            george@clipbrd.com
+                        </a>
+                    </h4>
+                </section>
+
+            </div>
+
+        </div>
+
+        <script src="lib/js/head.min.js"></script>
+        <script src="js/reveal.min.js"></script>
+
+        <script>
+
+            // Full list of configuration options available here:
+            // https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: false,
+                mouseWheel: false,
+                progress: true,
+                history: true,
+
+                theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+                transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/none
+
+                // Optional libraries used to extend on reveal.js
+                dependencies: [
+                    { src: 'lib/js/highlight.js', async: true, callback: function() { window.hljs.initHighlightingOnLoad(); } }
+                ]
+            });
+
+        </script>
+
+    </body>
+</html>

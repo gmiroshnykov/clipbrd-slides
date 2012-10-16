@@ -1,0 +1,5 @@
+section img.transparent-img {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
