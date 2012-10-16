@@ -240,6 +240,16 @@ var clipboard = textarea.value;
 
                 <section>
                     <h2>Chrome: Clipboard API</h2>
+                    <p>Want to set clipboard content?</p>
+                    <pre><code class="javascript">
+textarea.value = clipboard;
+textarea.select();
+document.execCommand("copy");
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>Chrome: Clipboard API</h2>
                     <p>Want to implement onClipboardChange?</p>
                     <pre><code class="javascript">
 var oldClipboad = getClipboard();
@@ -250,16 +260,6 @@ setInterval(function() {
         self.emit('change', newClipboard);
     }
 }, 100);
-                    </code></pre>
-                </section>
-
-                <section>
-                    <h2>Chrome: Clipboard API</h2>
-                    <p>Want to set clipboard content?</p>
-                    <pre><code class="javascript">
-textarea.value = clipboard;
-textarea.select();
-document.execCommand("copy");
                     </code></pre>
                 </section>
 
