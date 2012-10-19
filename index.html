@@ -4,7 +4,7 @@
     <head>
         <meta charset="utf-8">
 
-        <title>Clipbrd - a clipboard synchronizer</title>
+        <title>Clipbrd - clipboard synchronizer</title>
 
         <meta name="author" content="George Miroshnykov">
 
@@ -40,7 +40,7 @@
 
                 <section>
                     <h1>Clipbrd</h1>
-                    <h3>a clipboard synchronizer</h3>
+                    <h3>clipboard synchronizer</h3>
                     <img src="img/logo.png" class="transparent-img" width="40%" />
                     <h4><a href="http://www.clipbrd.com" target="_blank">www.clipbrd.com</a></h4>
                 </section>
@@ -103,8 +103,21 @@
                 </section>
 
                 <section>
+                    <h2>Challenges</h2>
+                    <ul>
+                        <li>user interface</li>
+                        <li>notifications</li>
+                        <li>merchant account</li>
+                    </ul>
+                </section>
+
+                <section>
                     <h2>Monetization?</h2>
                     <p>One-month trial + monthly subscription.</p>
+                    <br />
+                    <h2>Risks?</h2>
+                    <p>Google or Apple makes it a part of the OS?</p>
+                    <p>We'll still have cross-platform sync.</p>
                 </section>
 
                 <section>
@@ -319,12 +332,11 @@ setInterval(function() {
                 </section>
 
                 <section>
-                    <h2>Server-side</h2>
-                    <div class="fragment">
-                        <p><img src="http://www.gauntface.co.uk/blog/wp-content/uploads/2012/03/nodejs_logo.png.scaled500.png" class="transparent-img" style="width: 400px" /></p>
-                        <p><img src="http://redis.io/images/redis-300dpi.png" class="transparent-img" style="width: 400px" /></p>
-                        <p><img src="https://client-side-rendering-talk.nodejitsu.com/img/nodejitsu.png" class="transparent-img" style="width: 400px" /></p>
-                    </div>
+                    <h2>API server</h2>
+                </section>
+
+                <section>
+                    <img src="http://www.gauntface.co.uk/blog/wp-content/uploads/2012/03/nodejs_logo.png.scaled500.png" class="transparent-img" style="width: 60%" />
                 </section>
 
                 <section>
@@ -339,13 +351,15 @@ setInterval(function() {
                             <a href="http://stackoverflow.com/questions/5168718/what-blocks-ruby-python-to-get-javascript-v8-speed">V8</a>
                             and I'm a Google fanboy
                         </li>
+                        <li>I'm not afraid of callbacks</li>
                     </ul>
                 </section>
 
                 <section>
                     <h2><a href="http://www.12factor.net/">The Twelve Factors</a></h2>
-                    <p>fighting monolithic monster-apps since june 2011</p>
-                    <p>Thanks, <a href="http://www.heroku.com/">Heroku</a>!</p>
+                    <p><a href="http://www.heroku.com/">Heroku</a>, thanks for fighting monolithic monster-apps since June 2011!</p>
+                    <br />
+                    <p>So, can I actually apply those 12 factors?</p>
                 </section>
 
                 <section>
@@ -830,20 +844,294 @@ var config = {
                 </section>
 
                 <section>
-                    <h2>XI. Logs – ✓</h2>
+                    <h2>XI. Logs – ✗</h2>
                     <p>Treat logs as event streams.</p>
                     <img src="img/logs.png" />
-                    <p>Well, not very exciting, but kinda works :)</p>
+                    <p>One log, no search, no aggregation.</p>
                 </section>
 
                 <section>
-                    <h2>XII. Admin processes – ✓</h2>
+                    <h2>XII. Admin processes – ?</h2>
                     <p>Run admin/management tasks as one-off processes.</p>
                     <br />
                     <p>A separate tool: <code>clipbrd-admin</code></p>
-                    <p>Uses private admin API.</p>
+                    <p>Still in progress.</p>
                     <br />
                     <p>Database migrations are a separate story...</p>
+                </section>
+
+                <section>
+                    <h2>API Server: implementation</h2>
+                    <ul>
+                        <li><a href="http://expressjs.com/">express</a></li>
+                        <li><a href="http://socket.io/">socket.io</a></li>
+                        <li><a href="https://github.com/ToothlessGear/node-gcm">node-gcm</a></li>
+                        <li><a href="https://github.com/visionmedia/superagent">superagent</a></li>
+                        <li><a href="https://github.com/andris9/Nodemailer">nodemailer</a></li>
+                        <li><a href="https://github.com/caolan/async">async</a></li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>API Server: testing</h2>
+                    <p>disclaimer: I suck at BDD naming</p>
+                    <img src="img/mocha.png" />
+                </section>
+
+                <section>
+                    <h2>API Server: testing</h2>
+                    <p>
+                        <a href="http://visionmedia.github.com/mocha/">Mocha</a>
+                        +
+                        <a href="https://github.com/visionmedia/supertest">Supertest</a>
+                        :
+                    </p>
+                    <pre><code class="javascript">
+var server = require('..');
+
+process.env.NODE_ENV = 'testing';
+
+describe('API:', function() {
+    var app;
+    before(function(done){
+        app = server.createServer();
+        app.start(function(err) {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    describe('Sign up with unique email', function() {
+        it('should return 200 success', function(done) {
+            var user = {
+                email: helpers.getRandomEmail(),
+                hash: 'foobar'
+            };
+
+            supertest(app)
+                .post('/signup')
+                .send(user)
+                .expect(200, done);
+        });
+    });
+    // ...
+});
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>API Server: testing </h2>
+                    <p>
+                        each test creates it's own user,<br />
+                        so that tests are isolated
+                    </p>
+                    <pre><code class="javascript">
+describe('Web sync', function() {
+    it('should work', function(done) {
+        helpers.randomSignUp(app, function(user) {
+            // `user` is user7851479575037956@example.com
+            // ...
+        });
+    });
+});
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h2>Testing: TODO</h2>
+                    <ul>
+                        <li>
+                            Android automated testing with<br />
+                            <a href="http://developer.android.com/tools/help/monkeyrunner_concepts.html">MonkeyRunner</a>
+                            or
+                            <a href="http://code.google.com/p/robotium/">Robotium</a>
+                        </li>
+                        <li>
+                            Chrome automated testing with<br />who knows what
+                        </li>
+                    </ul>
+                </section>
+
+                <section>
+                    <img src="http://redis.io/images/redis-300dpi.png" class="transparent-img" style="width: 60%" />
+                </section>
+
+                <section>
+                    <h2>Why Redis?</h2>
+                    <ul>
+                        <li>it's awesome</li>
+                        <li>it's simple</li>
+                        <li>it's fast</li>
+                        <li>it's lightweight</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Seriously, why Redis?</h2>
+                    <p>It forces you to think about your data.</p>
+                    <br />
+                    <p>
+                        It's just a network-attached data structures:<br />
+                        Strings, hashes, lists, sets and sorted sets.
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Seriously, why Redis?</h2>
+                    <p>
+                        When you're writing to Redis,<br />
+                        you'd better know how you want to read it.
+                    </p>
+                    <br />
+                    <p>
+                        You can't just push in some random stuff<br />
+                        and expect to easily query it later,<br />
+                        like you do with RDBMS.
+                    </p>
+                    <br />
+                    <p>You wouldn't try to query an array using SQL, would you?</p>
+                </section>
+
+                <section>
+                    <h2>Seriously, why Redis?</h2>
+                    <p>The benefit is that it's insanely fast:</p>
+                    <pre><code>
+$ redis-benchmark -t set -n 1000000 -r 100000000 -d 100
+====== SET ======
+  1000000 requests completed in 20.47 seconds
+  50 parallel clients
+  100 bytes payload
+  keep alive: 1
+
+72.02% &lt;= 1 milliseconds
+99.77% &lt;= 2 milliseconds
+99.93% &lt;= 3 milliseconds
+99.98% &lt;= 4 milliseconds
+99.99% &lt;= 5 milliseconds
+100.00% &lt;= 6 milliseconds
+100.00% &lt;= 6 milliseconds
+48847.21 requests per second
+                    </code></pre>
+                    <p>
+                        <a href="http://redis.io/topics/faq">official FAQ</a>
+                        mentions 500k req/sec in production
+                    </p>
+                </section>
+
+                <section>
+                    <h2>Other Redis benefits</h2>
+                    <ul>
+                        <li>redis-cli</li>
+                        <li>operationally simple</li>
+                        <ul>
+                            <li>backups</li>
+                            <li>replication</li>
+                            <li>zero-downtime configuration</li>
+                        </ul>
+                        <li>server-side LUA scripting</li>
+                        <ul>
+                            <li>haven't tried it yet,<br />but it sounds awesome!</li>
+                        </ul>
+                        <li>Salvatore Sanfilippo (Redis creator)<br />is from Sicily!</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Redis limitations</h2>
+                    <ul>
+                        <li>requires mental shift</li>
+                        <li>dataset must fit into RAM</li>
+                        <li>no ad-hoc queries</li>
+                        <li>no sharding (yet)</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Clipbrd data model</h2>
+                    <ul>
+                        <li class="fragment">users (set)</li>
+                        <li class="fragment">user:&lt;email&gt; (hash)</li>
+                        <li class="fragment">user:&lt;email&gt;:devices (set)</li>
+                        <li class="fragment">devices (set) - only for analytics</li>
+                        <p class="fragment">
+                            <br />
+                            and that's it!
+                        </p>
+                    </ul>
+                </section>
+
+                <section>
+                    <img src="https://client-side-rendering-talk.nodejitsu.com/img/nodejitsu.png"
+                        class="transparent-img"
+                        style="width: 60%" />
+                </section>
+
+                <section>
+                    <h2>Why Nodejitsu?</h2>
+                    <ul>
+                        <li>I'd like to start with PaaS</li>
+                        <li>websocket support</li>
+                        <li>wanted to try something besides Heroku</li>
+                        <li>friendly support</li>
+                        <li>really cheap ($11/month for 5 drones)</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Nodejitsu disadvantages</h2>
+                    <ul>
+                        <li>supports only Node.js (doh!)</li>
+                        <li>no auto-scaling (yet)</li>
+                        <li>no alternative for <code>heroku run</code></li>
+                        <li>SSL SNI is a PITA</li>
+                    </ul>
+                    <div class="fragment">
+                        <br />
+                        <p>Sometimes, this happens:</p>
+                        <pre><code>
+error:   Nodejitsu Error (500): Internal Server Error
+warn:    Error returned from Nodejitsu
+error:   Error: socket hang up
+error:       at createHangUpError (http.js:1263:15)
+error:       at Socket.socketOnEnd (http.js:1351:23)
+error:       at TCP.onread (net.js:418:26)
+help:    For help with this error contact Nodejitsu Support:
+help:      webchat: &lt;http://webchat.nodejitsu.com/&gt;
+help:          irc: &lt;irc://chat.freenode.net/#nodejitsu&gt;
+help:        email: &lt;support@nodejitsu.com&gt;
+                        </code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Deploying to Nodejitsu</h2>
+                    <img src="img/build-release-run.png" />
+                </section>
+
+                <section>
+                    <h2>Online migrations</h2>
+                    <p class="fragment">Sorry, this talk is already too long, maybe next time...</p>
+                </section>
+
+                <section>
+                    <h2>TODO</h2>
+                    <ul>
+                        <li>analytics</li>
+                        <li>rewrite and redesign Android client</li>
+                        <li>improve Chrome client</li>
+                        <li>create standalone clients<br />for Win/Mac/Linux</li>
+                        <li>???</li>
+                        <li>PROFIT!</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>TODO</h2>
+                    <img src="img/automate.jpg" class="transparent-img" />
+                </section>
+
+                <section>
+                    <h1>Questions?</h1>
                 </section>
 
                 <section>
@@ -855,7 +1143,7 @@ var config = {
                         </a>
                     </h4>
                     <br />
-                    <p>See these slides at <a href="http://slides.clipbrd.com">slides.clipbrd.com</a></p>
+                    <p>Slides available at <a href="http://slides.clipbrd.com">slides.clipbrd.com</a></p>
                 </section>
 
             </div>
